@@ -1,0 +1,677 @@
+import pygame
+import sys
+import json
+import random
+import copy
+import os # Para construir rutas de archivos
+
+# --- 1. Inicialización de Pygame ---
+pygame.init()
+
+# --- 2. Constantes y Configuración ---
+
+# Dimensiones de la pantalla
+ANCHO_PANTALLA = 800
+ALTO_PANTALLA = 600
+
+# Colores (formato RGB)
+BLANCO = (255, 255, 255)
+NEGRO = (0, 0, 0)
+GRIS_CLARO = (220, 220, 220)
+GRIS_OSCURO = (150, 150, 150)
+VERDE_CORRECTO = (60, 179, 113)
+ROJO_INCORRECTO = (220, 20, 60)
+AZUL_TITULO = (30, 144, 255)
+COLOR_BOTON_NORMAL = (0, 128, 255)
+COLOR_BOTON_HOVER = (100, 180, 255)
+
+# Colores para las categorías de la ruleta
+COLOR_CATEGORIAS = {
+    "Campo Electrico": (231, 76, 60), # Rojo
+    "Corriente": (52, 152, 219),      # Azul
+    "Temperatura": (241, 196, 15),     # Amarillo
+    "DEFAULT": (127, 140, 141)
+}
+
+# Nombres de los personajes (basados en categorías)
+LISTA_PERSONAJES = ["Campo Electrico", "Corriente", "Temperatura"]
+
+# Fotogramas por segundo
+FPS = 60
+
+# Configuración de la pantalla
+pantalla = pygame.display.set_mode((ANCHO_PANTALLA, ALTO_PANTALLA))
+pygame.display.set_caption("Mi Juego de Preguntas")
+
+# Reloj (para controlar los FPS)
+clock = pygame.time.Clock()
+
+# Ruta a la carpeta de imágenes
+RUTA_IMAGENES = "imagenes"
+
+# --- 3. Fuentes ---
+try:
+    fuente_titulo = pygame.font.Font("Arial", 60)
+    fuente_pregunta = pygame.font.Font("Arial", 36)
+    fuente_opcion = pygame.font.Font("Arial", 28)
+    fuente_hud = pygame.font.Font("Arial", 22) # Fuente para el HUD
+except IOError:
+    print("Fuente 'Arial' no encontrada, usando fuente por defecto de Pygame.")
+    fuente_titulo = pygame.font.Font(None, 74)
+    fuente_pregunta = pygame.font.Font(None, 48)
+    fuente_opcion = pygame.font.Font(None, 36)
+    fuente_hud = pygame.font.Font(None, 30)
+
+
+# --- 3.5. Cargar Recursos (Imágenes) ---
+
+def cargar_iconos():
+    """
+    Carga las imágenes de los personajes desde la carpeta 'imagenes'.
+    Crea dos tamaños: uno para el HUD (48x48) y otro grande (100x100).
+    """
+    iconos_grandes = {}
+    iconos_hud = {}
+    
+    # Tamaños de icono más grandes y lógicos
+    TAMANO_ICONO_GRANDE = (100, 100)
+    TAMANO_ICONO_HUD = (48, 48)
+    
+    # Overlay de "atenuación" (negro, semitransparente)
+    # Se usará si el icono .png tiene fondo transparente
+    overlay_desactivado = pygame.Surface(TAMANO_ICONO_HUD, pygame.SRCALPHA)
+    overlay_desactivado.fill((0, 0, 0, 180)) # Negro, 180/255 de opacidad
+
+    for pj in LISTA_PERSONAJES:
+        # Convierte "Campo Electrico" -> "campo_electrico.png"
+        nombre_archivo = f"{pj.lower().replace(' ', '_')}.png"
+        ruta_completa = os.path.join(RUTA_IMAGENES, nombre_archivo)
+        
+        try:
+            # Carga la imagen original (asegúrate de que sea .convert_alpha())
+            img = pygame.image.load(ruta_completa).convert_alpha()
+            
+            # Crea y guarda las versiones escaladas
+            iconos_grandes[pj] = pygame.transform.scale(img, TAMANO_ICONO_GRANDE)
+            iconos_hud[pj] = pygame.transform.scale(img, TAMANO_ICONO_HUD)
+            
+        except pygame.error as e:
+            print(f"Error al cargar la imagen '{ruta_completa}': {e}")
+            print("Se usará un color sólido como reemplazo.")
+            
+            # Crea un icono de reemplazo (un cuadrado de color)
+            color = COLOR_CATEGORIAS.get(pj, "DEFAULT")
+            img_grande = pygame.Surface(TAMANO_ICONO_GRANDE)
+            img_grande.fill(color)
+            iconos_grandes[pj] = img_grande
+            
+            img_hud = pygame.Surface(TAMANO_ICONO_HUD)
+            img_hud.fill(color)
+            iconos_hud[pj] = img_hud
+
+    return iconos_grandes, iconos_hud, overlay_desactivado
+
+# --- 4. Cargar y Organizar Datos ---
+
+def cargar_preguntas(archivo_json):
+    """
+    Carga las preguntas desde un archivo JSON.
+    Maneja errores si el archivo no se encuentra o tiene mal formato.
+    """
+    try:
+        with open(archivo_json, 'r', encoding='utf-8') as f:
+            preguntas = json.load(f)
+        if not preguntas:
+            print(f"Error: El archivo '{archivo_json}' está vacío.")
+            return []
+        print(f"Se cargaron {len(preguntas)} preguntas exitosamente.")
+        return preguntas
+    except FileNotFoundError:
+        print(f"Error: No se encontró el archivo '{archivo_json}'.")
+        print("Asegúrate de crear el archivo 'preguntas.json' en la misma carpeta.")
+        return []
+    except json.JSONDecodeError:
+        print(f"Error: El archivo '{archivo_json}' tiene un formato JSON inválido.")
+        return []
+    except Exception as e:
+        print(f"Ocurrió un error inesperado al cargar las preguntas: {e}")
+        return []
+
+def organizar_preguntas_por_categoria(lista_preguntas):
+    """
+    Organiza la lista de preguntas en un diccionario
+    donde las claves son las categorías.
+    """
+    dict_preguntas = {}
+    for pregunta in lista_preguntas:
+        categoria = pregunta["categoria"]
+        if categoria not in dict_preguntas:
+            dict_preguntas[categoria] = []
+        dict_preguntas[categoria].append(pregunta)
+        
+    # Barajamos las preguntas dentro de cada categoría
+    for categoria in dict_preguntas:
+        random.shuffle(dict_preguntas[categoria])
+        
+    print(f"Preguntas organizadas en {len(dict_preguntas)} categorías.")
+    return dict_preguntas
+
+
+# --- 5. Funciones Auxiliares (Código Limpio) ---
+
+def dibujar_texto(texto, fuente, color, superficie, x, y, centrado=False):
+    """
+    Función auxiliar para renderizar y dibujar texto en la pantalla.
+    """
+    obj_texto = fuente.render(texto, True, color)
+    rect_texto = obj_texto.get_rect()
+    
+    if centrado:
+        rect_texto.center = (x, y)
+    else:
+        rect_texto.topleft = (x, y)
+        
+    superficie.blit(obj_texto, rect_texto)
+    return rect_texto # Devolvemos el rectángulo para detección de clics
+
+def dibujar_hud(superficie, hud_data, iconos_hud, overlay):
+    """
+    NUEVO (Versión 2): Dibuja el HUD (Puntuación, Racha, Personajes).
+    Puntos/Racha a la izquierda, Iconos de Personajes (solos) a la derecha.
+    """
+    puntuacion = hud_data['puntuacion']
+    racha = hud_data['racha']
+    personajes_obtenidos = hud_data['personajes']
+
+    # HUD más alto (60px) para acomodar los nuevos iconos de 48x48
+    hud_rect = pygame.Rect(0, 0, ANCHO_PANTALLA, 60)
+    pygame.draw.rect(superficie, GRIS_CLARO, hud_rect)
+    
+    # Texto centrado verticalmente (aprox)
+    y_texto_hud = 18 
+    
+    # --- Lado Izquierdo: Puntos y Racha ---
+    dibujar_texto(f"Puntos: {puntuacion}", fuente_hud, NEGRO, superficie, 15, y_texto_hud)
+    dibujar_texto(f"Racha: {racha}", fuente_hud, NEGRO, superficie, 180, y_texto_hud)
+    
+    # --- Lado Derecho: Iconos de Personajes (Quesitos) ---
+    pos_x_icono = ANCHO_PANTALLA - 10 # Empezar desde el borde derecho con 10px padding
+    y_icono = 6 # (60px HUD - 48px Icono) / 2
+    
+    # Iteramos en REVERSA para colocarlos de derecha a izquierda
+    for personaje in reversed(LISTA_PERSONAJES): 
+        
+        # Mover la posición X para el *inicio* de este icono
+        pos_x_icono -= 48 # Ancho del icono (48x48)
+        
+        if personaje in iconos_hud:
+            icono = iconos_hud[personaje]
+            superficie.blit(icono, (pos_x_icono, y_icono))
+            
+            # Overlay si no está obtenido
+            if not personajes_obtenidos.get(personaje, False):
+                superficie.blit(overlay, (pos_x_icono, y_icono))
+        
+        # Mover la posición X para el *siguiente* icono (con padding)
+        pos_x_icono -= 15 # Padding de 15px entre iconos
+
+
+# --- 6. Pantallas (Máquina de Estados) ---
+
+def pantalla_inicio():
+    """
+    Muestra la pantalla de inicio y espera.
+    Devuelve 'JUEGO' o 'SALIR'.
+    """
+    ancho_boton = 250
+    alto_boton = 70
+    x_boton = (ANCHO_PANTALLA - ancho_boton) // 2
+    y_boton = 350
+    rect_boton_inicio = pygame.Rect(x_boton, y_boton, ancho_boton, alto_boton)
+    
+    while True:
+        pos_mouse = pygame.mouse.get_pos()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return "SALIR"
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    if rect_boton_inicio.collidepoint(pos_mouse):
+                        return "JUEGO"
+
+        pantalla.fill(BLANCO)
+        dibujar_texto("¡PreguntADOS!", fuente_titulo, AZUL_TITULO, pantalla, ANCHO_PANTALLA // 2, 150, centrado=True)
+        dibujar_texto("Haz clic en 'Empezar' para jugar", fuente_opcion, GRIS_OSCURO, pantalla, ANCHO_PANTALLA // 2, 250, centrado=True)
+
+        color_actual_boton = COLOR_BOTON_NORMAL
+        if rect_boton_inicio.collidepoint(pos_mouse):
+            color_actual_boton = COLOR_BOTON_HOVER
+        pygame.draw.rect(pantalla, color_actual_boton, rect_boton_inicio, border_radius=15)
+        dibujar_texto("Empezar", fuente_pregunta, BLANCO, pantalla, rect_boton_inicio.centerx, rect_boton_inicio.centery, centrado=True)
+
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
+def pantalla_ruleta(categorias_disponibles, hud_data, iconos_grandes, iconos_hud, overlay):
+    """
+    Pantalla que simula la ruleta.
+    Recibe la lista de categorías que AÚN tienen preguntas.
+    Devuelve la categoría elegida o "SALIR".
+    """
+    
+    estado_ruleta = "LISTO"
+    tiempo_inicio_giro = 0
+    tiempo_inicio_resultado = 0
+    categoria_final = ""
+    categoria_mostrada = ""
+    rect_boton_girar = pygame.Rect(ANCHO_PANTALLA // 2 - 125, 450, 250, 70)
+    
+    while True:
+        pos_mouse = pygame.mouse.get_pos()
+        tiempo_actual = pygame.time.get_ticks()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return "SALIR"
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    if estado_ruleta == "LISTO" and rect_boton_girar.collidepoint(pos_mouse):
+                        estado_ruleta = "GIRANDO"
+                        tiempo_inicio_giro = tiempo_actual
+                        print("¡Ruleta girando!")
+
+        # --- Lógica de Estados de la Ruleta ---
+        if estado_ruleta == "GIRANDO":
+            duracion_giro_ms = 3000
+            if tiempo_actual - tiempo_inicio_giro < duracion_giro_ms:
+                # Durante el giro, elegimos una categoría al azar rápido
+                categoria_mostrada = random.choice(categorias_disponibles)
+            else:
+                # Se acabó el tiempo, elegimos el resultado final
+                categoria_final = random.choice(categorias_disponibles)
+                estado_ruleta = "RESULTADO"
+                tiempo_inicio_resultado = tiempo_actual
+                print(f"Resultado: {categoria_final}")
+
+        elif estado_ruleta == "RESULTADO":
+            duracion_resultado_ms = 1500
+            if tiempo_actual - tiempo_inicio_resultado > duracion_resultado_ms:
+                return categoria_final # Devolvemos la categoría a 'main'
+
+        # --- Dibujado (Ruleta) ---
+        pantalla.fill(BLANCO)
+        
+        dibujar_texto("Gira la Ruleta", fuente_titulo, AZUL_TITULO, pantalla, ANCHO_PANTALLA // 2, 100, centrado=True)
+        
+        # El "indicador" de la ruleta (un recuadro que cambia de color)
+        rect_indicador = pygame.Rect(ANCHO_PANTALLA // 2 - 200, 200, 400, 150)
+        
+        if estado_ruleta == "LISTO":
+            dibujar_texto("¡Pulsa para girar!", fuente_pregunta, NEGRO, pantalla, rect_indicador.centerx, rect_indicador.centery, centrado=True)
+            pygame.draw.rect(pantalla, GRIS_CLARO, rect_indicador, 5, border_radius=10)
+            
+            color_actual_boton = COLOR_BOTON_NORMAL
+            if rect_boton_girar.collidepoint(pos_mouse):
+                color_actual_boton = COLOR_BOTON_HOVER
+            pygame.draw.rect(pantalla, color_actual_boton, rect_boton_girar, border_radius=15)
+            dibujar_texto("GIRAR", fuente_pregunta, BLANCO, pantalla, rect_boton_girar.centerx, rect_boton_girar.centery, centrado=True)
+
+        else: # Estado GIRANDO o RESULTADO
+            categoria = categoria_mostrada if estado_ruleta == "GIRANDO" else categoria_final
+            
+            # Dibuja el fondo de color
+            color_fondo = COLOR_CATEGORIAS.get(categoria, "DEFAULT")
+            pygame.draw.rect(pantalla, color_fondo, rect_indicador, border_radius=10)
+            
+            # Dibuja el icono grande (100x100) en el centro del indicador
+            if categoria in iconos_grandes:
+                icono = iconos_grandes[categoria]
+                rect_icono = icono.get_rect(center=rect_indicador.center)
+                pantalla.blit(icono, rect_icono)
+            
+            # Dibuja el texto
+            if estado_ruleta == "GIRANDO":
+                dibujar_texto("Girando...", fuente_opcion, NEGRO, pantalla, ANCHO_PANTALLA // 2, 480, centrado=True)
+            else: # RESULTADO
+                dibujar_texto(f"¡Toca {categoria}!", fuente_pregunta, NEGRO, pantalla, ANCHO_PANTALLA // 2, 480, centrado=True)
+        
+        # Dibujar el HUD (siempre encima)
+        dibujar_hud(pantalla, hud_data, iconos_hud, overlay)
+
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
+def pantalla_juego(pregunta_actual, hud_data, iconos_grandes, iconos_hud, overlay):
+    """
+    NUEVO (Versión 2): Muestra la categoría de forma prominente usando
+    el icono grande.
+    Devuelve 'CORRECTO', 'INCORRECTO' o 'SALIR'.
+    """
+    running = True
+    rects_opciones = []
+    
+    # Ajuste de posiciones 'y' para el nuevo diseño
+    pos_y_pregunta = 250
+    pos_y_opcion_base = 320 # Más abajo
+    
+    espacio_opcion = 70
+    estado_respuesta = None # 'CORRECTO' o 'INCORRECTO'
+    tiempo_feedback = 0
+    opcion_seleccionada = -1
+    resultado_final = "INCORRECTO" 
+
+    # Usamos el icono grande (100x100)
+    icono_categoria = iconos_grandes.get(pregunta_actual["categoria"], None)
+    
+    while running:
+        # --- 6.1. Manejo de Eventos ---
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return "SALIR"
+            
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1 and estado_respuesta is None:
+                    pos_mouse = event.pos
+                    
+                    for i, rect in enumerate(rects_opciones):
+                        if rect.collidepoint(pos_mouse):
+                            opcion_seleccionada = i
+                            if i == pregunta_actual['correcta']:
+                                estado_respuesta = 'CORRECTO'
+                                resultado_final = 'CORRECTO' # Guardamos el resultado
+                            else:
+                                estado_respuesta = 'INCORRECTO'
+                                resultado_final = 'INCORRECTO' # Guardamos el resultado
+                            tiempo_feedback = pygame.time.get_ticks() 
+                            
+        # --- 6.2. Lógica del Juego ---
+        if estado_respuesta is not None:
+            tiempo_actual = pygame.time.get_ticks()
+            if tiempo_actual - tiempo_feedback > 1500:
+                running = False
+                return resultado_final # Devolvemos el resultado final
+
+        # --- 6.3. Dibujado (Render) ---
+        pantalla.fill(BLANCO)
+        
+        
+        # --- Mostrar la Categoría de forma prominente ---
+        
+        # 1. Dibujar el icono grande centrado
+        if icono_categoria:
+            # Centramos el icono (100x100) en la parte superior
+            rect_icono = icono_categoria.get_rect(center=(ANCHO_PANTALLA // 2, 130))
+            pantalla.blit(icono_categoria, rect_icono)
+        
+        # 2. Dibujar el texto de la categoría debajo del icono
+        dibujar_texto(pregunta_actual["categoria"], 
+                      fuente_opcion, # Usamos la fuente más pequeña
+                      GRIS_OSCURO, 
+                      pantalla, 
+                      ANCHO_PANTALLA // 2, 
+                      190, # Justo debajo del icono grande
+                      centrado=True)
+
+        # 3. Dibujar la pregunta, más abajo
+        dibujar_texto(pregunta_actual["pregunta"], 
+                      fuente_pregunta, 
+                      NEGRO, 
+                      pantalla, 
+                      ANCHO_PANTALLA // 2, 
+                      pos_y_pregunta, # 250
+                      centrado=True)
+        
+        rects_opciones.clear()
+        
+        # 4. Dibujar Opciones
+        for i, opcion in enumerate(pregunta_actual["opciones"]):
+            pos_y = pos_y_opcion_base + (i * espacio_opcion)
+            rect_boton = pygame.Rect(ANCHO_PANTALLA // 2 - 200, pos_y, 400, 50)
+            rects_opciones.append(rect_boton)
+            
+            color_fondo_boton = GRIS_CLARO
+            color_borde_boton = GRIS_OSCURO
+            
+            if estado_respuesta is not None:
+                if i == opcion_seleccionada:
+                    color_fondo_boton = VERDE_CORRECTO if estado_respuesta == 'CORRECTO' else ROJO_INCORRECTO
+                if estado_respuesta == 'INCORRECTO' and i == pregunta_actual['correcta']:
+                     color_fondo_boton = VERDE_CORRECTO
+            
+            pygame.draw.rect(pantalla, color_fondo_boton, rect_boton, border_radius=10)
+            pygame.draw.rect(pantalla, color_borde_boton, rect_boton, 2, border_radius=10)
+            
+            dibujar_texto(opcion, fuente_opcion, NEGRO, pantalla, rect_boton.centerx, rect_boton.centery, centrado=True)
+
+        # 5. Dibujar el HUD (siempre encima)
+        dibujar_hud(pantalla, hud_data, iconos_hud, overlay)
+
+        pygame.display.flip()
+        clock.tick(FPS)
+
+def pantalla_elegir_personaje(personajes_obtenidos, iconos_grandes):
+    """
+    Pantalla para elegir un personaje (quesito) al alcanzar
+    la racha de 3.
+    """
+    
+    rects_personajes = {}
+    
+    # Filtramos solo los personajes que AÚN NO se han obtenido
+    personajes_elegibles = [p for p in LISTA_PERSONAJES if not personajes_obtenidos[p]]
+    
+    # Si por alguna razón entramos aquí sin nada que elegir, salimos
+    if not personajes_elegibles:
+        return None # Devolvemos None para que main sepa que no hubo elección
+
+    while True:
+        pos_mouse = pygame.mouse.get_pos()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return "SALIR"
+            
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    # Comprobamos clic en los botones
+                    for personaje, rect in rects_personajes.items():
+                        if rect.collidepoint(pos_mouse):
+                            print(f"Personaje elegido: {personaje}")
+                            return personaje # Devolvemos el nombre del personaje
+
+        # --- Dibujado ---
+        pantalla.fill(BLANCO)
+        
+        dibujar_texto("¡Racha de 3!", fuente_titulo, VERDE_CORRECTO, pantalla, ANCHO_PANTALLA // 2, 80, centrado=True)
+        dibujar_texto("Elige un personaje", fuente_pregunta, NEGRO, pantalla, ANCHO_PANTALLA // 2, 150, centrado=True)
+
+        rects_personajes.clear()
+        pos_y_actual = 220
+        
+        # Mostramos TODOS los personajes
+        for personaje in LISTA_PERSONAJES:
+            # Botones más altos (120px) para los iconos (100x100)
+            rect_boton = pygame.Rect(ANCHO_PANTALLA // 2 - 200, pos_y_actual, 400, 120)
+            color_fondo = COLOR_CATEGORIAS.get(personaje, "DEFAULT")
+            
+            if personaje in personajes_elegibles:
+                # Efecto Hover si es elegible
+                if rect_boton.collidepoint(pos_mouse):
+                    color_fondo = pygame.Color(color_fondo).lerp(BLANCO, 0.3) # Aclara el color
+                
+                # Guardamos el rect SÓLO si es elegible
+                rects_personajes[personaje] = rect_boton
+                pygame.draw.rect(pantalla, color_fondo, rect_boton, border_radius=15)
+            
+            else:
+                # Si ya está obtenido, lo mostramos gris/desactivado
+                pygame.draw.rect(pantalla, GRIS_CLARO, rect_boton, border_radius=15)
+            
+            # Dibujar icono (100x100) y texto dentro del botón
+            icono = iconos_grandes.get(personaje, None)
+            
+            if icono:
+                # Dibujamos el icono a la izquierda, centrado verticalmente
+                rect_icono = icono.get_rect(midleft = (rect_boton.left + 20, rect_boton.centery))
+                pantalla.blit(icono, rect_icono)
+
+            # Dibujamos el texto a la derecha del icono
+            color_texto = NEGRO if personaje in personajes_elegibles else GRIS_OSCURO
+            dibujar_texto(personaje, 
+                          fuente_opcion, 
+                          color_texto, 
+                          pantalla, 
+                          rect_boton.left + 135, # Posición X (a la derecha del icono de 100px)
+                          rect_boton.centery, # Posición Y (centrada)
+                          centrado=False) # Alineado a la izquierda
+
+            pos_y_actual += 140 # Más espacio entre botones (120 de alto + 20 de padding)
+
+        pygame.display.flip()
+        clock.tick(FPS)
+
+# --- 7. Bucle Principal (Gestor de Estados) ---
+
+def main():
+    """
+    MODIFICADO: El gestor de estados ahora maneja la puntuación,
+    la racha y los personajes obtenidos.
+    """
+    
+    # Cargamos las preguntas al inicio
+    lista_total_preguntas = cargar_preguntas("preguntas.json")
+    if not lista_total_preguntas:
+        print("No se pudieron cargar las preguntas. Saliendo.")
+        pygame.quit()
+        sys.exit()
+
+    # Creamos el "banco" maestro de preguntas, organizado por categoría
+    banco_preguntas_master = organizar_preguntas_por_categoria(lista_total_preguntas)
+    
+    # Cargar los recursos gráficos
+    iconos_grandes, iconos_hud, overlay_desactivado = cargar_iconos()
+    
+    # Variables de estado de la partida
+    puntuacion_total = 0
+    racha_correctas = 0
+    personajes_obtenidos = {personaje: False for personaje in LISTA_PERSONAJES}
+    
+    # Copia de preguntas para la partida actual
+    preguntas_disponibles_partida = {}
+    
+    estado_actual = "INICIO"
+    pregunta_seleccionada = None # Variable para pasar la pregunta a pantalla_juego
+    
+    while estado_actual != "SALIR":
+        
+        # Preparamos el diccionario de datos del HUD
+        # Lo pasamos a las pantallas que lo necesiten
+        hud_data = {
+            "puntuacion": puntuacion_total,
+            "racha": racha_correctas,
+            "personajes": personajes_obtenidos
+        }
+
+        if estado_actual == "INICIO":
+            resultado_inicio = pantalla_inicio()
+            
+            if resultado_inicio == "JUEGO":
+                # Reseteamos el estado de la partida
+                preguntas_disponibles_partida = copy.deepcopy(banco_preguntas_master)
+                puntuacion_total = 0
+                racha_correctas = 0
+                personajes_obtenidos = {p: False for p in LISTA_PERSONAJES}
+                
+                print("--- ¡Inicia nueva partida! ---")
+                estado_actual = "RULETA" # El primer paso después de INICIO es la RULETA
+            else: # SALIR
+                estado_actual = "SALIR"
+        
+        elif estado_actual == "RULETA":
+            # Obtenemos las categorías que AÚN tienen preguntas
+            categorias_disponibles = [cat for cat in preguntas_disponibles_partida if preguntas_disponibles_partida[cat]]
+            
+            if not categorias_disponibles:
+                # ¡No quedan preguntas en ninguna categoría!
+                print("¡Se acabaron todas las preguntas del juego!")
+                # (Futuro: Mostrar pantalla de fin de juego/puntuación)
+                estado_actual = "INICIO" # Volvemos al menú
+                continue # Saltamos el resto del bucle
+
+            # Pasamos los iconos a la pantalla
+            resultado_ruleta = pantalla_ruleta(categorias_disponibles, hud_data, iconos_grandes, iconos_hud, overlay_desactivado)
+            
+            if resultado_ruleta == "SALIR":
+                estado_actual = "SALIR"
+            else:
+                # La ruleta nos dio una categoría
+                categoria_elegida = resultado_ruleta
+                
+                # Sacamos la siguiente pregunta de esa categoría
+                # .pop() la saca y la elimina de la lista de esa partida
+                pregunta_seleccionada = preguntas_disponibles_partida[categoria_elegida].pop()
+                
+                estado_actual = "JUEGO" # Pasamos a la pantalla de juego
+
+        elif estado_actual == "JUEGO":
+            # Pasamos la pregunta y los iconos
+            resultado_juego = pantalla_juego(pregunta_seleccionada, 
+                                             hud_data, 
+                                             iconos_grandes, # Pasa los grandes para el título
+                                             iconos_hud, 
+                                             overlay_desactivado)
+            
+            if resultado_juego == "SALIR":
+                estado_actual = "SALIR"
+            
+            elif resultado_juego == "CORRECTO":
+                puntuacion_total += 1
+                racha_correctas += 1
+                print(f"¡Correcto! Racha: {racha_correctas}")
+                
+                # Comprobar la racha
+                if racha_correctas == 3:
+                    print("¡Racha de 3! Pasando a elegir personaje.")
+                    estado_actual = "ELEGIR_PERSONAJE"
+                else:
+                    estado_actual = "RULETA" # Volver a la ruleta
+                    
+            elif resultado_juego == "INCORRECTO":
+                racha_correctas = 0 # Romper la racha
+                print("Incorrecto. Racha reiniciada.")
+                estado_actual = "RULETA" # Volver a la ruleta
+        
+        elif estado_actual == "ELEGIR_PERSONAJE":
+            # Pasamos los personajes que ya tenemos y los iconos
+            personaje_elegido = pantalla_elegir_personaje(personajes_obtenidos, iconos_grandes)
+            
+            if personaje_elegido == "SALIR":
+                estado_actual = "SALIR"
+            elif personaje_elegido: # (Si no es None)
+                personajes_obtenidos[personaje_elegido] = True # Obtenemos el personaje
+                racha_correctas = 0 # Reiniciamos la racha después de usarla
+                
+                # Comprobar si ganó el juego
+                if all(personajes_obtenidos.values()):
+                    print("¡HAS GANADO! ¡Obtuviste todos los personajes!")
+                    # (Futuro: Pantalla de Victoria)
+                    estado_actual = "INICIO" # Volvemos al inicio
+                else:
+                    estado_actual = "RULETA" # Volvemos a la ruleta
+            else:
+                # (Caso raro: entró a la pantalla sin nada que elegir)
+                racha_correctas = 0
+                estado_actual = "RULETA"
+
+
+    # --- Salir del Juego ---
+    pygame.quit()
+    sys.exit()
+
+
+# --- Punto de Entrada Principal ---
+if __name__ == "__main__":
+    main()

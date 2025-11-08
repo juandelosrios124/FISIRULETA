@@ -1,0 +1,134 @@
+[
+    {
+        "categoria": "Campo Electrico",
+        "pregunta": "¿Cómo se mide el campo eléctrico?",
+        "opciones": ["Voltios (V)", "Amperios (A)", "Newton/Coulomb (N/C)", "Ohmios (Ω)"],
+        "correcta": 2
+    },
+    {
+        "categoria": "Corriente",
+        "pregunta": "¿Qué es la ley de Ohm?",
+        "opciones": ["V = I * R", "F = m * a", "E = mc^2", "P = V * I"],
+        "correcta": 0
+    },
+    {
+        "categoria": "Temperatura",
+        "pregunta": "¿A qué temperatura se congela el agua en Celsius?",
+        "opciones": ["32 °F", "0 °C", "100 °C", "273 K"],
+        "correcta": 1
+    },
+    {
+        "categoria": "Campo Electrico",
+        "pregunta": "Una carga puntual positiva genera líneas de campo...",
+        "opciones": ["Entrantes", "Salientes", "Circulares", "Paralelas"],
+        "correcta": 1
+    },
+    {
+        "categoria": "Temperatura",
+        "pregunta": "¿Cuál es el cero absoluto en la escala Kelvin?",
+        "opciones": ["0 K", "-273.15 K", "100 K", "0 C"],
+        "correcta": 0
+    },
+    {
+        "categoria": "Corriente",
+        "pregunta": "¿Cuál es la unidad de medida de la resistencia eléctrica?",
+        "opciones": ["Amperio (A)", "Voltio (V)", "Ohmio (Ω)", "Vatio (W)"],
+        "correcta": 2
+    },
+    {
+        "categoria": "Campo Electrico",
+        "pregunta": "¿Cuál es el campo eléctrico dentro de un conductor ideal en equilibrio?",
+        "opciones": ["Infinito", "Constante pero no cero", "Cero", "Variable"],
+        "correcta": 2
+    },
+    {
+        "categoria": "Temperatura",
+        "pregunta": "¿Qué dispositivo se usa para medir la temperatura?",
+        "opciones": ["Barómetro", "Amperímetro", "Termómetro", "Voltímetro"],
+        "correcta": 2
+    },
+    {
+        "categoria": "Corriente",
+        "pregunta": "¿Qué tipo de corriente fluye siempre en la misma dirección?",
+        "opciones": ["Corriente Alterna (CA)", "Corriente Directa (CD)", "Corriente Mixta", "Corriente Pulsante"],
+        "correcta": 1
+    },
+    {
+        "categoria": "Campo Electrico",
+        "pregunta": "¿Qué ley describe la fuerza entre dos cargas eléctricas puntuales?",
+        "opciones": ["Ley de Ohm", "Ley de Gauss", "Ley de Coulomb", "Ley de Ampère"],
+        "correcta": 2
+    },
+    {
+        "categoria": "Temperatura",
+        "pregunta": "La temperatura es una medida de la... promedio de las partículas.",
+        "opciones": ["Energía cinética", "Energía potencial", "Masa total", "Carga eléctrica"],
+        "correcta": 0
+    },
+    {
+        "categoria": "Corriente",
+        "pregunta": "¿Cuál es la fórmula de la potencia eléctrica?",
+        "opciones": ["P = V / I", "P = I / R", "P = V * I", "P = R * V"],
+        "correcta": 2
+    },
+    {
+        "categoria": "Temperatura",
+        "pregunta": "¿Cómo se llama la transferencia de calor por ondas electromagnéticas?",
+        "opciones": ["Conducción", "Convección", "Radiación", "Evaporación"],
+        "correcta": 2
+    },
+    {
+        "categoria": "Campo Electrico",
+        "pregunta": "¿Cuál es la unidad del potencial eléctrico?",
+        "opciones": ["Voltio (V)", "Amperio (A)", "Coulomb (C)", "Faradio (F)"],
+        "correcta": 0
+    },
+    {
+        "categoria": "Corriente",
+        "pregunta": "¿Qué material se considera un buen aislante eléctrico?",
+        "opciones": ["Cobre", "Oro", "Goma", "Aluminio"],
+        "correcta": 2
+    },
+    {
+        "categoria": "Temperatura",
+        "pregunta": "¿En qué escala de temperatura el agua hierve a 100 grados?",
+        "opciones": ["Kelvin", "Fahrenheit", "Celsius", "Rankine"],
+        "correcta": 2
+    },
+    {
+        "categoria": "Campo Electrico",
+        "pregunta": "¿Cómo es la fuerza sobre una carga negativa en un campo eléctrico?",
+        "opciones": ["Misma dirección que el campo", "Opuesta al campo", "Perpendicular al campo", "Nula"],
+        "correcta": 1
+    },
+    {
+        "categoria": "Corriente",
+        "pregunta": "¿Cuál es la unidad de la carga eléctrica?",
+        "opciones": ["Amperio (A)", "Coulomb (C)", "Voltio (V)", "Faradio (F)"],
+        "correcta": 1
+    },
+    {
+        "categoria": "Temperatura",
+        "pregunta": "La transferencia de calor por el movimiento de un fluido (líquido o gas) es:",
+        "opciones": ["Conducción", "Convección", "Radiación", "Sublimación"],
+        "correcta": 1
+    },
+    {
+        "categoria": "Campo Electrico",
+        "pregunta": "La Ley de Gauss relaciona el flujo eléctrico con...",
+        "opciones": ["El campo magnético", "La carga neta encerrada", "La corriente eléctrica", "La resistencia"],
+        "correcta": 1
+    },
+    {
+        "categoria": "Corriente",
+        "pregunta": "En un circuito en serie, ¿cómo es la corriente en todos sus componentes?",
+        "opciones": ["Es la misma", "Se divide", "Aumenta", "Disminuye"],
+        "correcta": 0
+    },
+    {
+        "categoria": "Temperatura",
+        "pregunta": "¿Qué ley establece el equilibrio térmico (si A=B y B=C, A=C)?",
+        "opciones": ["Primera Ley", "Segunda Ley", "Tercera Ley", "Ley Cero"],
+        "correcta": 3
+    }
+]
