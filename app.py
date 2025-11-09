@@ -67,50 +67,58 @@ except IOError:
 
 def cargar_iconos():
     """
-    Carga las imágenes de los personajes desde la carpeta 'imagenes'.
-    Crea dos tamaños: uno para el HUD (48x48) y otro grande (100x100).
+    Carga todos los iconos Y la imagen de la ruleta.
+    MODIFICADO: Escala la ruleta proporcionalmente para evitar distorsión.
     """
     iconos_grandes = {}
     iconos_hud = {}
     
-    # Tamaños de icono más grandes y lógicos
     TAMANO_ICONO_GRANDE = (100, 100)
     TAMANO_ICONO_HUD = (48, 48)
     
-    # Overlay de "atenuación" (negro, semitransparente)
-    # Se usará si el icono .png tiene fondo transparente
     overlay_desactivado = pygame.Surface(TAMANO_ICONO_HUD, pygame.SRCALPHA)
-    overlay_desactivado.fill((0, 0, 0, 180)) # Negro, 180/255 de opacidad
+    overlay_desactivado.fill((0, 0, 0, 180)) 
 
     for pj in LISTA_PERSONAJES:
-        # Convierte "Campo Electrico" -> "campo_electrico.png"
         nombre_archivo = f"{pj.lower().replace(' ', '_')}.png"
         ruta_completa = os.path.join(RUTA_IMAGENES, nombre_archivo)
         
         try:
-            # Carga la imagen original (asegúrate de que sea .convert_alpha())
             img = pygame.image.load(ruta_completa).convert_alpha()
-            
-            # Crea y guarda las versiones escaladas
             iconos_grandes[pj] = pygame.transform.scale(img, TAMANO_ICONO_GRANDE)
             iconos_hud[pj] = pygame.transform.scale(img, TAMANO_ICONO_HUD)
             
         except pygame.error as e:
             print(f"Error al cargar la imagen '{ruta_completa}': {e}")
-            print("Se usará un color sólido como reemplazo.")
-            
-            # Crea un icono de reemplazo (un cuadrado de color)
             color = COLOR_CATEGORIAS.get(pj, "DEFAULT")
             img_grande = pygame.Surface(TAMANO_ICONO_GRANDE)
             img_grande.fill(color)
             iconos_grandes[pj] = img_grande
-            
             img_hud = pygame.Surface(TAMANO_ICONO_HUD)
             img_hud.fill(color)
             iconos_hud[pj] = img_hud
 
-    return iconos_grandes, iconos_hud, overlay_desactivado
+    # MODIFICADO: Cargar la ruleta con escala proporcional
+    ruleta_imagen_base = None
+    ruta_ruleta = os.path.join(RUTA_IMAGENES, "Rula.png") # Nombre de tu archivo
+    try:
+        ruleta_imagen_base = pygame.image.load(ruta_ruleta).convert_alpha()
+        
+        # --- ARREGLO PARA LA DISTORSIÓN ---
+        img_rect = ruleta_imagen_base.get_rect()
+        nuevo_ancho = 400 # Definimos un ancho fijo
+        # Calculamos el alto manteniendo la proporción
+        escala = nuevo_ancho / img_rect.width
+        nuevo_alto = int(img_rect.height * escala)
+        
+        ruleta_imagen_base = pygame.transform.scale(ruleta_imagen_base, (nuevo_ancho, nuevo_alto)) 
+        print(f"Ruleta cargada y escalada a ({nuevo_ancho}, {nuevo_alto})")
 
+    except pygame.error as e:
+        print(f"Error al cargar la imagen de la ruleta '{ruta_ruleta}': {e}")
+        print("La ruleta no se mostrará.")
+        
+    return iconos_grandes, iconos_hud, overlay_desactivado, ruleta_imagen_base
 # --- 4. Cargar y Organizar Datos ---
 
 def cargar_preguntas(archivo_json):
@@ -241,7 +249,7 @@ def pantalla_inicio():
                         return "JUEGO"
 
         pantalla.fill(BLANCO)
-        dibujar_texto("¡PreguntADOS!", fuente_titulo, AZUL_TITULO, pantalla, ANCHO_PANTALLA // 2, 150, centrado=True)
+        dibujar_texto("¡FISIRULETA!", fuente_titulo, AZUL_TITULO, pantalla, ANCHO_PANTALLA // 2, 150, centrado=True)
         dibujar_texto("Haz clic en 'Empezar' para jugar", fuente_opcion, GRIS_OSCURO, pantalla, ANCHO_PANTALLA // 2, 250, centrado=True)
 
         color_actual_boton = COLOR_BOTON_NORMAL
@@ -254,19 +262,43 @@ def pantalla_inicio():
         clock.tick(FPS)
 
 
-def pantalla_ruleta(categorias_disponibles, hud_data, iconos_grandes, iconos_hud, overlay):
+def pantalla_ruleta(categorias_disponibles, hud_data, iconos_grandes, iconos_hud, overlay, ruleta_imagen_base):
     """
-    Pantalla que simula la ruleta.
-    Recibe la lista de categorías que AÚN tienen preguntas.
-    Devuelve la categoría elegida o "SALIR".
+    MODIFICADO (¡NUEVA LÓGICA!): La ruleta está ESTÁTICA.
+    La FLECHA gira.
     """
-    
     estado_ruleta = "LISTO"
     tiempo_inicio_giro = 0
     tiempo_inicio_resultado = 0
     categoria_final = ""
-    categoria_mostrada = ""
+    
     rect_boton_girar = pygame.Rect(ANCHO_PANTALLA // 2 - 125, 450, 250, 70)
+    
+    # --- Lógica de la Flecha ---
+    angulo_rotacion_FLECHA = 0
+    velocidad_giro = 0
+    duracion_giro_ms = 0
+    
+    # NUEVO: Creamos una superficie para la flecha
+    # La flecha apuntará a la DERECHA (0 grados matemáticos)
+    flecha_base_surf = pygame.Surface((180, 20), pygame.SRCALPHA)
+    # Dibujamos un polígono (la punta de la flecha)
+    pygame.draw.polygon(flecha_base_surf, ROJO_INCORRECTO, 
+                        ((180, 10), (150, 0), (150, 20)))
+    # Dibujamos el cuerpo de la flecha
+    pygame.draw.rect(flecha_base_surf, ROJO_INCORRECTO, (0, 5, 150, 10))
+    
+    # El centro de la ruleta, donde todo se dibuja
+    CENTRO_RULETA = (ANCHO_PANTALLA // 2, 280)
+
+    # --- Definición de las secciones (¡CORREGIDO!) ---
+    # Basado en tu imagen Rula.png, con 0° a la derecha (3 en punto)
+    # Corregí los rangos que estaban mal en la versión anterior.
+    secciones_ruleta = {
+        "Corriente": (0, 120),       # Top-Right (Verde)
+        "Campo Electrico": (120, 240), # Top-Left (Azul)
+        "Temperatura": (240, 360)     # Bottom (Amarillo)
+    }
     
     while True:
         pos_mouse = pygame.mouse.get_pos()
@@ -280,69 +312,96 @@ def pantalla_ruleta(categorias_disponibles, hud_data, iconos_grandes, iconos_hud
                     if estado_ruleta == "LISTO" and rect_boton_girar.collidepoint(pos_mouse):
                         estado_ruleta = "GIRANDO"
                         tiempo_inicio_giro = tiempo_actual
-                        print("¡Ruleta girando!")
+                        
+                        # Spin Aleatorio: velocidad y duración aleatorias
+                        velocidad_giro = random.uniform(20, 30) # Grados por frame
+                        duracion_giro_ms = random.uniform(2500, 4500) # 2.5 a 4.5 seg
+                        
+                        print("¡Flecha girando!")
 
-        # --- Lógica de Estados de la Ruleta ---
+        # --- Lógica de Estados ---
         if estado_ruleta == "GIRANDO":
-            duracion_giro_ms = 3000
-            if tiempo_actual - tiempo_inicio_giro < duracion_giro_ms:
-                # Durante el giro, elegimos una categoría al azar rápido
-                categoria_mostrada = random.choice(categorias_disponibles)
-            else:
-                # Se acabó el tiempo, elegimos el resultado final
-                categoria_final = random.choice(categorias_disponibles)
+            # Sigue girando la flecha
+            # (Usamos negativo para que gire en sentido horario (Clock-Wise))
+            angulo_rotacion_FLECHA = (angulo_rotacion_FLECHA - velocidad_giro) % 360
+            
+            # Comprueba si el tiempo de giro aleatorio ha terminado
+            if tiempo_actual - tiempo_inicio_giro > duracion_giro_ms:
                 estado_ruleta = "RESULTADO"
                 tiempo_inicio_resultado = tiempo_actual
+                
+                # --- LÓGICA DE DETECCIÓN ---
+                # Normalizamos el ángulo final (de -360 a 0 -> 0 a 360)
+                angulo_final = angulo_rotacion_FLECHA % 360
+                
+                print(f"Giro detenido. Ángulo final de la flecha: {angulo_final}")
+                
+                categoria_final = ""
+                # Comprueba en qué sección de ángulo cayó
+                for categoria, (min_angle, max_angle) in secciones_ruleta.items():
+                    if min_angle <= angulo_final < max_angle:
+                        categoria_final = categoria
+                        break
+                
+                if not categoria_final: # Fallback (si cae en 0 exacto)
+                    categoria_final = "Corriente" 
+                
+                # Fallback 2: Si la categoría ganadora no tiene preguntas
+                if categoria_final not in categorias_disponibles:
+                    print(f"Categoría '{categoria_final}' no disponible, eligiendo otra.")
+                    categoria_final = random.choice(categorias_disponibles)
+                
                 print(f"Resultado: {categoria_final}")
 
         elif estado_ruleta == "RESULTADO":
-            duracion_resultado_ms = 1500
+            # La flecha deja de girar
+            duracion_resultado_ms = 2000
             if tiempo_actual - tiempo_inicio_resultado > duracion_resultado_ms:
-                return categoria_final # Devolvemos la categoría a 'main'
+                return categoria_final
 
         # --- Dibujado (Ruleta) ---
         pantalla.fill(BLANCO)
         
         dibujar_texto("Gira la Ruleta", fuente_titulo, AZUL_TITULO, pantalla, ANCHO_PANTALLA // 2, 100, centrado=True)
         
-        # El "indicador" de la ruleta (un recuadro que cambia de color)
-        rect_indicador = pygame.Rect(ANCHO_PANTALLA // 2 - 200, 200, 400, 150)
+        if ruleta_imagen_base:
+            # 1. DIBUJAR LA RULETA (ESTÁTICA)
+            rect_ruleta = ruleta_imagen_base.get_rect(center=CENTRO_RULETA)
+            pantalla.blit(ruleta_imagen_base, rect_ruleta)
+            
+            # 2. DIBUJAR LA FLECHA (GIRANDO)
+            # Rotamos la flecha base
+            flecha_rotada = pygame.transform.rotate(flecha_base_surf, angulo_rotacion_FLECHA)
+            # Centramos la nueva superficie rotada
+            rect_flecha_rotada = flecha_rotada.get_rect(center=CENTRO_RULETA)
+            # La dibujamos
+            pantalla.blit(flecha_rotada, rect_flecha_rotada)
+            
+            # 3. DIBUJAR UN CÍRCULO CENTRAL
+            # Para ocultar el pivote de la flecha y que se vea limpio
+            pygame.draw.circle(pantalla, GRIS_OSCURO, CENTRO_RULETA, 20)
+            pygame.draw.circle(pantalla, GRIS_CLARO, CENTRO_RULETA, 15)
+
+        else: # Plan B si la imagen no cargó
+            rect_indicador = pygame.Rect(ANCHO_PANTALLA // 2 - 200, 200, 400, 150)
+            pygame.draw.rect(pantalla, GRIS_CLARO, rect_indicador, 5, border_radius=10)
+        
         
         if estado_ruleta == "LISTO":
-            dibujar_texto("¡Pulsa para girar!", fuente_pregunta, NEGRO, pantalla, rect_indicador.centerx, rect_indicador.centery, centrado=True)
-            pygame.draw.rect(pantalla, GRIS_CLARO, rect_indicador, 5, border_radius=10)
-            
             color_actual_boton = COLOR_BOTON_NORMAL
             if rect_boton_girar.collidepoint(pos_mouse):
                 color_actual_boton = COLOR_BOTON_HOVER
             pygame.draw.rect(pantalla, color_actual_boton, rect_boton_girar, border_radius=15)
             dibujar_texto("GIRAR", fuente_pregunta, BLANCO, pantalla, rect_boton_girar.centerx, rect_boton_girar.centery, centrado=True)
-
-        else: # Estado GIRANDO o RESULTADO
-            categoria = categoria_mostrada if estado_ruleta == "GIRANDO" else categoria_final
-            
-            # Dibuja el fondo de color
-            color_fondo = COLOR_CATEGORIAS.get(categoria, "DEFAULT")
-            pygame.draw.rect(pantalla, color_fondo, rect_indicador, border_radius=10)
-            
-            # Dibuja el icono grande (100x100) en el centro del indicador
-            if categoria in iconos_grandes:
-                icono = iconos_grandes[categoria]
-                rect_icono = icono.get_rect(center=rect_indicador.center)
-                pantalla.blit(icono, rect_icono)
-            
-            # Dibuja el texto
-            if estado_ruleta == "GIRANDO":
-                dibujar_texto("Girando...", fuente_opcion, NEGRO, pantalla, ANCHO_PANTALLA // 2, 480, centrado=True)
-            else: # RESULTADO
-                dibujar_texto(f"¡Toca {categoria}!", fuente_pregunta, NEGRO, pantalla, ANCHO_PANTALLA // 2, 480, centrado=True)
         
+        elif estado_ruleta == "RESULTADO":
+             dibujar_texto(f"¡Toca {categoria_final}!", fuente_pregunta, NEGRO, pantalla, ANCHO_PANTALLA // 2, 480, centrado=True)
+
         # Dibujar el HUD (siempre encima)
         dibujar_hud(pantalla, hud_data, iconos_hud, overlay)
 
         pygame.display.flip()
         clock.tick(FPS)
-
 
 def pantalla_juego(pregunta_actual, hud_data, iconos_grandes, iconos_hud, overlay):
     """
@@ -537,38 +596,30 @@ def pantalla_elegir_personaje(personajes_obtenidos, iconos_grandes):
 
 def main():
     """
-    MODIFICADO: El gestor de estados ahora maneja la puntuación,
-    la racha y los personajes obtenidos.
+    MODIFICADO: El gestor de estados ahora pasa la imagen de la ruleta.
     """
     
-    # Cargamos las preguntas al inicio
     lista_total_preguntas = cargar_preguntas("preguntas.json")
     if not lista_total_preguntas:
         print("No se pudieron cargar las preguntas. Saliendo.")
         pygame.quit()
         sys.exit()
 
-    # Creamos el "banco" maestro de preguntas, organizado por categoría
     banco_preguntas_master = organizar_preguntas_por_categoria(lista_total_preguntas)
     
-    # Cargar los recursos gráficos
-    iconos_grandes, iconos_hud, overlay_desactivado = cargar_iconos()
+    # MODIFICADO: Ahora carga y devuelve también la imagen de la ruleta
+    iconos_grandes, iconos_hud, overlay_desactivado, ruleta_imagen_base = cargar_iconos()
     
-    # Variables de estado de la partida
     puntuacion_total = 0
     racha_correctas = 0
     personajes_obtenidos = {personaje: False for personaje in LISTA_PERSONAJES}
-    
-    # Copia de preguntas para la partida actual
     preguntas_disponibles_partida = {}
     
     estado_actual = "INICIO"
-    pregunta_seleccionada = None # Variable para pasar la pregunta a pantalla_juego
+    pregunta_seleccionada = None
     
     while estado_actual != "SALIR":
         
-        # Preparamos el diccionario de datos del HUD
-        # Lo pasamos a las pantallas que lo necesiten
         hud_data = {
             "puntuacion": puntuacion_total,
             "racha": racha_correctas,
@@ -579,48 +630,38 @@ def main():
             resultado_inicio = pantalla_inicio()
             
             if resultado_inicio == "JUEGO":
-                # Reseteamos el estado de la partida
                 preguntas_disponibles_partida = copy.deepcopy(banco_preguntas_master)
                 puntuacion_total = 0
                 racha_correctas = 0
                 personajes_obtenidos = {p: False for p in LISTA_PERSONAJES}
                 
                 print("--- ¡Inicia nueva partida! ---")
-                estado_actual = "RULETA" # El primer paso después de INICIO es la RULETA
-            else: # SALIR
+                estado_actual = "RULETA"
+            else: 
                 estado_actual = "SALIR"
         
         elif estado_actual == "RULETA":
-            # Obtenemos las categorías que AÚN tienen preguntas
             categorias_disponibles = [cat for cat in preguntas_disponibles_partida if preguntas_disponibles_partida[cat]]
             
             if not categorias_disponibles:
-                # ¡No quedan preguntas en ninguna categoría!
                 print("¡Se acabaron todas las preguntas del juego!")
-                # (Futuro: Mostrar pantalla de fin de juego/puntuación)
-                estado_actual = "INICIO" # Volvemos al menú
-                continue # Saltamos el resto del bucle
+                estado_actual = "INICIO"
+                continue
 
-            # Pasamos los iconos a la pantalla
-            resultado_ruleta = pantalla_ruleta(categorias_disponibles, hud_data, iconos_grandes, iconos_hud, overlay_desactivado)
+            # MODIFICADO: Pasa la imagen de la ruleta a la pantalla_ruleta
+            resultado_ruleta = pantalla_ruleta(categorias_disponibles, hud_data, iconos_grandes, iconos_hud, overlay_desactivado, ruleta_imagen_base)
             
             if resultado_ruleta == "SALIR":
                 estado_actual = "SALIR"
             else:
-                # La ruleta nos dio una categoría
                 categoria_elegida = resultado_ruleta
-                
-                # Sacamos la siguiente pregunta de esa categoría
-                # .pop() la saca y la elimina de la lista de esa partida
                 pregunta_seleccionada = preguntas_disponibles_partida[categoria_elegida].pop()
-                
-                estado_actual = "JUEGO" # Pasamos a la pantalla de juego
+                estado_actual = "JUEGO"
 
         elif estado_actual == "JUEGO":
-            # Pasamos la pregunta y los iconos
             resultado_juego = pantalla_juego(pregunta_seleccionada, 
                                              hud_data, 
-                                             iconos_grandes, # Pasa los grandes para el título
+                                             iconos_grandes, 
                                              iconos_hud, 
                                              overlay_desactivado)
             
@@ -632,46 +673,38 @@ def main():
                 racha_correctas += 1
                 print(f"¡Correcto! Racha: {racha_correctas}")
                 
-                # Comprobar la racha
                 if racha_correctas == 3:
                     print("¡Racha de 3! Pasando a elegir personaje.")
                     estado_actual = "ELEGIR_PERSONAJE"
                 else:
-                    estado_actual = "RULETA" # Volver a la ruleta
+                    estado_actual = "RULETA"
                     
             elif resultado_juego == "INCORRECTO":
-                racha_correctas = 0 # Romper la racha
+                racha_correctas = 0
                 print("Incorrecto. Racha reiniciada.")
-                estado_actual = "RULETA" # Volver a la ruleta
+                estado_actual = "RULETA"
         
         elif estado_actual == "ELEGIR_PERSONAJE":
-            # Pasamos los personajes que ya tenemos y los iconos
             personaje_elegido = pantalla_elegir_personaje(personajes_obtenidos, iconos_grandes)
             
             if personaje_elegido == "SALIR":
                 estado_actual = "SALIR"
-            elif personaje_elegido: # (Si no es None)
-                personajes_obtenidos[personaje_elegido] = True # Obtenemos el personaje
-                racha_correctas = 0 # Reiniciamos la racha después de usarla
+            elif personaje_elegido: 
+                personajes_obtenidos[personaje_elegido] = True
+                racha_correctas = 0
                 
-                # Comprobar si ganó el juego
                 if all(personajes_obtenidos.values()):
                     print("¡HAS GANADO! ¡Obtuviste todos los personajes!")
-                    # (Futuro: Pantalla de Victoria)
-                    estado_actual = "INICIO" # Volvemos al inicio
+                    estado_actual = "INICIO" 
                 else:
-                    estado_actual = "RULETA" # Volvemos a la ruleta
+                    estado_actual = "RULETA"
             else:
-                # (Caso raro: entró a la pantalla sin nada que elegir)
                 racha_correctas = 0
                 estado_actual = "RULETA"
 
-
-    # --- Salir del Juego ---
     pygame.quit()
     sys.exit()
 
 
-# --- Punto de Entrada Principal ---
 if __name__ == "__main__":
     main()
