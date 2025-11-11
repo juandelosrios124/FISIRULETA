@@ -11,19 +11,23 @@ pygame.init()
 # --- 2. Constantes y Configuración ---
 
 # Dimensiones de la pantalla
-ANCHO_PANTALLA = 800
+ANCHO_PANTALLA = 1200
 ALTO_PANTALLA = 600
 
-# Colores (formato RGB)
+# --- 2. Colores ---
+# (Tus colores existentes)
 BLANCO = (255, 255, 255)
 NEGRO = (0, 0, 0)
-GRIS_CLARO = (220, 220, 220)
-GRIS_OSCURO = (150, 150, 150)
-VERDE_CORRECTO = (60, 179, 113)
-ROJO_INCORRECTO = (220, 20, 60)
-AZUL_TITULO = (30, 144, 255)
-COLOR_BOTON_NORMAL = (0, 128, 255)
-COLOR_BOTON_HOVER = (100, 180, 255)
+GRIS_CLARO = (200, 200, 200)
+GRIS_OSCURO = (100, 100, 100)
+AZUL_TITULO = (50, 150, 255)
+VERDE_CORRECTO = (76, 175, 80)
+ROJO_INCORRECTO = (244, 67, 54)
+COLOR_BOTON_NORMAL = (100, 100, 255) # Azul suave
+COLOR_BOTON_HOVER = (150, 150, 255) # Azul más claro para hover
+
+# NUEVO COLOR
+COLOR_TITULO_VICTORIA = (255, 223, 0) # Un dorado brillante para la victoria
 
 # Colores para las categorías de la ruleta
 COLOR_CATEGORIAS = {
@@ -50,13 +54,23 @@ clock = pygame.time.Clock()
 RUTA_IMAGENES = "imagenes"
 
 # --- 3. Fuentes ---
+
+# Definimos el nombre de tu archivo de fuente
+NOMBRE_FUENTE = "Pixeltype.ttf"
+
 try:
-    fuente_titulo = pygame.font.Font("Arial", 60)
-    fuente_pregunta = pygame.font.Font("Arial", 36)
-    fuente_opcion = pygame.font.Font("Arial", 28)
-    fuente_hud = pygame.font.Font("Arial", 22) # Fuente para el HUD
+    # Intentamos cargar tu fuente personalizada.
+    # ¡OJO! Las fuentes "pixel" a veces necesitan tamaños más grandes.
+    # Es posible que tengas que experimentar con estos números.
+    fuente_titulo = pygame.font.Font(NOMBRE_FUENTE, 70)
+    fuente_pregunta = pygame.font.Font(NOMBRE_FUENTE, 25)
+    fuente_opcion = pygame.font.Font(NOMBRE_FUENTE, 32)
+    fuente_hud = pygame.font.Font(NOMBRE_FUENTE, 20)
+    print(f"Fuente personalizada '{NOMBRE_FUENTE}' cargada exitosamente.")
+    
 except IOError:
-    print("Fuente 'Arial' no encontrada, usando fuente por defecto de Pygame.")
+    # Plan B: Si no se encuentra 'Pixeltype.ttf', usa la fuente por defecto.
+    print(f"Error al cargar la fuente '{NOMBRE_FUENTE}'. Usando fuente por defecto de Pygame.")
     fuente_titulo = pygame.font.Font(None, 74)
     fuente_pregunta = pygame.font.Font(None, 48)
     fuente_opcion = pygame.font.Font(None, 36)
@@ -67,8 +81,65 @@ except IOError:
 
 def cargar_iconos():
     """
-    Carga todos los iconos Y la imagen de la ruleta.
-    MODIFICADO: Escala la ruleta proporcionalmente para evitar distorsión.
+    MODIFICADO: Carga iconos, ruleta Y los fondos .png con sus nombres correctos.
+    """
+    iconos_grandes = {}
+    iconos_hud = {}
+    
+    TAMANO_ICONO_GRANDE = (100, 100)
+    TAMANO_ICONO_HUD = (48, 48)
+    
+    overlay_desactivado = pygame.Surface(TAMANO_ICONO_HUD, pygame.SRCALPHA)
+    overlay_desactivado.fill((0, 0, 0, 180)) 
+
+    for pj in LISTA_PERSONAJES:
+        nombre_archivo = f"{pj.lower().replace(' ', '_')}.png"
+        ruta_completa = os.path.join(RUTA_IMAGENES, nombre_archivo)
+        
+        try:
+            img = pygame.image.load(ruta_completa).convert_alpha()
+            iconos_grandes[pj] = pygame.transform.scale(img, TAMANO_ICONO_GRANDE)
+            iconos_hud[pj] = pygame.transform.scale(img, TAMANO_ICONO_HUD)
+            
+        except pygame.error as e:
+            print(f"Error al cargar la imagen '{ruta_completa}': {e}")
+            # ... (código de reemplazo) ...
+            color = COLOR_CATEGORIAS.get(pj, "DEFAULT")
+            img_grande = pygame.Surface(TAMANO_ICONO_GRANDE)
+            img_grande.fill(color)
+            iconos_grandes[pj] = img_grande
+            img_hud = pygame.Surface(TAMANO_ICONO_HUD)
+            img_hud.fill(color)
+            iconos_hud[pj] = img_hud
+
+    ruleta_imagen_base = None
+    ruta_ruleta = os.path.join(RUTA_IMAGENES, "Rula.png")
+    try:
+        ruleta_imagen_base = pygame.image.load(ruta_ruleta).convert_alpha()
+        img_rect = ruleta_imagen_base.get_rect()
+        nuevo_ancho = 400
+        escala = nuevo_ancho / img_rect.width
+        nuevo_alto = int(img_rect.height * escala)
+        ruleta_imagen_base = pygame.transform.scale(ruleta_imagen_base, (nuevo_ancho, nuevo_alto)) 
+        print(f"Ruleta cargada y escalada a ({nuevo_ancho}, {nuevo_alto})")
+    except pygame.error as e:
+        print(f"Error al cargar la imagen de la ruleta '{ruta_ruleta}': {e}")
+        print("La ruleta no se mostrará.")
+    
+    # --- MODIFICADO: Cargar los fondos .png ---
+    fondo_juego = None
+    # Buscamos "Fondo.png"
+    ruta_fondo_juego = os.path.join(RUTA_IMAGENES, "Fondo.jpg") 
+    try:
+        fondo_juego = pygame.image.load(ruta_fondo_juego).convert()
+        fondo_juego = pygame.transform.scale(fondo_juego, (ANCHO_PANTALLA, ALTO_PANTALLA))
+        print(f"Fondo de juego '{ruta_fondo_juego}' cargado y escalado.")
+    except pygame.error as e:
+        print(f"Error al cargar el fondo de juego '{ruta_fondo_juego}': {e}")
+
+def cargar_iconos():
+    """
+    MODIFICADO: Carga iconos, ruleta Y los fondos .jpg con sus nombres correctos.
     """
     iconos_grandes = {}
     iconos_hud = {}
@@ -98,27 +169,42 @@ def cargar_iconos():
             img_hud.fill(color)
             iconos_hud[pj] = img_hud
 
-    # MODIFICADO: Cargar la ruleta con escala proporcional
     ruleta_imagen_base = None
-    ruta_ruleta = os.path.join(RUTA_IMAGENES, "Rula.png") # Nombre de tu archivo
+    ruta_ruleta = os.path.join(RUTA_IMAGENES, "Rula.png")
     try:
         ruleta_imagen_base = pygame.image.load(ruta_ruleta).convert_alpha()
-        
-        # --- ARREGLO PARA LA DISTORSIÓN ---
         img_rect = ruleta_imagen_base.get_rect()
-        nuevo_ancho = 400 # Definimos un ancho fijo
-        # Calculamos el alto manteniendo la proporción
+        nuevo_ancho = 400
         escala = nuevo_ancho / img_rect.width
         nuevo_alto = int(img_rect.height * escala)
-        
         ruleta_imagen_base = pygame.transform.scale(ruleta_imagen_base, (nuevo_ancho, nuevo_alto)) 
         print(f"Ruleta cargada y escalada a ({nuevo_ancho}, {nuevo_alto})")
-
     except pygame.error as e:
         print(f"Error al cargar la imagen de la ruleta '{ruta_ruleta}': {e}")
         print("La ruleta no se mostrará.")
-        
-    return iconos_grandes, iconos_hud, overlay_desactivado, ruleta_imagen_base
+    
+    # --- MODIFICADO: Cargar los fondos .jpg ---
+    fondo_juego = None
+    # Buscamos "Fondo.jpg"
+    ruta_fondo_juego = os.path.join(RUTA_IMAGENES, "Fondo.jpg") 
+    try:
+        fondo_juego = pygame.image.load(ruta_fondo_juego).convert()
+        fondo_juego = pygame.transform.scale(fondo_juego, (ANCHO_PANTALLA, ALTO_PANTALLA))
+        print(f"Fondo de juego '{ruta_fondo_juego}' cargado y escalado.")
+    except pygame.error as e:
+        print(f"Error al cargar el fondo de juego '{ruta_fondo_juego}': {e}")
+
+    fondo_victoria = None
+    # Buscamos "Victoria.jpg"
+    ruta_fondo_victoria = os.path.join(RUTA_IMAGENES, "Victoria.jpg") 
+    try:
+        fondo_victoria = pygame.image.load(ruta_fondo_victoria).convert()
+        fondo_victoria = pygame.transform.scale(fondo_victoria, (ANCHO_PANTALLA, ALTO_PANTALLA))
+        print(f"Fondo de victoria '{ruta_fondo_victoria}' cargado y escalado.")
+    except pygame.error as e:
+        print(f"Error al cargar el fondo de victoria '{ruta_fondo_victoria}': {e}")
+
+    return iconos_grandes, iconos_hud, overlay_desactivado, ruleta_imagen_base, fondo_juego, fondo_victoria
 # --- 4. Cargar y Organizar Datos ---
 
 def cargar_preguntas(archivo_json):
@@ -226,10 +312,9 @@ def dibujar_hud(superficie, hud_data, iconos_hud, overlay):
 
 # --- 6. Pantallas (Máquina de Estados) ---
 
-def pantalla_inicio():
+def pantalla_inicio(fondo_juego):
     """
-    Muestra la pantalla de inicio y espera.
-    Devuelve 'JUEGO' o 'SALIR'.
+    MODIFICADO: Acepta y dibuja el fondo_juego.
     """
     ancho_boton = 250
     alto_boton = 70
@@ -248,10 +333,18 @@ def pantalla_inicio():
                     if rect_boton_inicio.collidepoint(pos_mouse):
                         return "JUEGO"
 
-        pantalla.fill(BLANCO)
-        dibujar_texto("¡FISIRULETA!", fuente_titulo, AZUL_TITULO, pantalla, ANCHO_PANTALLA // 2, 150, centrado=True)
-        dibujar_texto("Haz clic en 'Empezar' para jugar", fuente_opcion, GRIS_OSCURO, pantalla, ANCHO_PANTALLA // 2, 250, centrado=True)
+        # --- Dibujado ---
+        # MODIFICADO: Dibujar el fondo primero
+        if fondo_juego:
+            pantalla.blit(fondo_juego, (0, 0))
+        else:
+            pantalla.fill(BLANCO) # Plan B si el fondo no carga
+        
+        # MODIFICADO: Texto en BLANCO para que resalte
+        dibujar_texto("¡FISIRULETA!", fuente_titulo, BLANCO, pantalla, ANCHO_PANTALLA // 2, 200, centrado=True)
+        dibujar_texto("Haz clic en 'Empezar' para jugar", fuente_opcion, BLANCO, pantalla, ANCHO_PANTALLA // 2, 250, centrado=True)
 
+        # (El botón no necesita cambios, sus colores resaltan bien)
         color_actual_boton = COLOR_BOTON_NORMAL
         if rect_boton_inicio.collidepoint(pos_mouse):
             color_actual_boton = COLOR_BOTON_HOVER
@@ -260,7 +353,6 @@ def pantalla_inicio():
 
         pygame.display.flip()
         clock.tick(FPS)
-
 
 def pantalla_ruleta(categorias_disponibles, hud_data, iconos_grandes, iconos_hud, overlay, ruleta_imagen_base):
     """
@@ -362,7 +454,7 @@ def pantalla_ruleta(categorias_disponibles, hud_data, iconos_grandes, iconos_hud
         # --- Dibujado (Ruleta) ---
         pantalla.fill(BLANCO)
         
-        dibujar_texto("Gira la Ruleta", fuente_titulo, AZUL_TITULO, pantalla, ANCHO_PANTALLA // 2, 100, centrado=True)
+        dibujar_texto("", fuente_titulo, AZUL_TITULO, pantalla, ANCHO_PANTALLA // 2, 100, centrado=True)
         
         if ruleta_imagen_base:
             # 1. DIBUJAR LA RULETA (ESTÁTICA)
@@ -403,36 +495,36 @@ def pantalla_ruleta(categorias_disponibles, hud_data, iconos_grandes, iconos_hud
         pygame.display.flip()
         clock.tick(FPS)
 
-def pantalla_juego(pregunta_actual, hud_data, iconos_grandes, iconos_hud, overlay):
+def pantalla_juego(pregunta_actual, hud_data, iconos_grandes, iconos_hud, overlay, fondo_juego):
     """
-    NUEVO (Versión 2): Muestra la categoría de forma prominente usando
-    el icono grande.
-    Devuelve 'CORRECTO', 'INCORRECTO' o 'SALIR'.
+    MODIFICADO: Añadido un temporizador de 10 segundos y dibuja el fondo de juego.
     """
     running = True
     rects_opciones = []
     
-    # Ajuste de posiciones 'y' para el nuevo diseño
     pos_y_pregunta = 250
-    pos_y_opcion_base = 320 # Más abajo
+    pos_y_opcion_base = 320
     
     espacio_opcion = 70
-    estado_respuesta = None # 'CORRECTO' o 'INCORRECTO'
+    estado_respuesta = None 
     tiempo_feedback = 0
     opcion_seleccionada = -1
     resultado_final = "INCORRECTO" 
 
-    # Usamos el icono grande (100x100)
     icono_categoria = iconos_grandes.get(pregunta_actual["categoria"], None)
     
+    LIMITE_TIEMPO_MS = 10000 
+    tiempo_inicio_pregunta = pygame.time.get_ticks() 
+    tiempo_restante_segundos = 10 
+    
     while running:
-        # --- 6.1. Manejo de Eventos ---
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return "SALIR"
             
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1 and estado_respuesta is None:
+            if event.type == pygame.MOUSEBUTTONDOWN and estado_respuesta is None:
+                if event.button == 1:
                     pos_mouse = event.pos
                     
                     for i, rect in enumerate(rects_opciones):
@@ -440,59 +532,67 @@ def pantalla_juego(pregunta_actual, hud_data, iconos_grandes, iconos_hud, overla
                             opcion_seleccionada = i
                             if i == pregunta_actual['correcta']:
                                 estado_respuesta = 'CORRECTO'
-                                resultado_final = 'CORRECTO' # Guardamos el resultado
+                                resultado_final = 'CORRECTO'
                             else:
                                 estado_respuesta = 'INCORRECTO'
-                                resultado_final = 'INCORRECTO' # Guardamos el resultado
+                                resultado_final = 'INCORRECTO'
+                            
                             tiempo_feedback = pygame.time.get_ticks() 
                             
-        # --- 6.2. Lógica del Juego ---
         if estado_respuesta is not None:
             tiempo_actual = pygame.time.get_ticks()
-            if tiempo_actual - tiempo_feedback > 1500:
-                running = False
-                return resultado_final # Devolvemos el resultado final
+            if tiempo_actual - tiempo_feedback > 1500: 
+                return resultado_final 
+        
+        else:
+            tiempo_actual = pygame.time.get_ticks()
+            tiempo_transcurrido = tiempo_actual - tiempo_inicio_pregunta
+            tiempo_restante_ms = LIMITE_TIEMPO_MS - tiempo_transcurrido
+            
+            tiempo_restante_segundos = max(0, int(tiempo_restante_ms / 1000) + 1)
+            
+            if tiempo_restante_ms <= 0:
+                print("¡Se acabó el tiempo!")
+                estado_respuesta = 'INCORRECTO'
+                resultado_final = 'INCORRECTO'
+                tiempo_feedback = pygame.time.get_ticks() 
+                opcion_seleccionada = -1 
 
-        # --- 6.3. Dibujado (Render) ---
-        pantalla.fill(BLANCO)
+        # --- Dibujado (Render) ---
+        # NUEVO: Dibujar el fondo primero
+        if fondo_juego:
+            pantalla.blit(fondo_juego, (0, 0))
+        else:
+            pantalla.fill(BLANCO) # Si no hay fondo, rellena con blanco
         
-        
-        # --- Mostrar la Categoría de forma prominente ---
-        
-        # 1. Dibujar el icono grande centrado
+        # 1. Dibujar Categoría
         if icono_categoria:
-            # Centramos el icono (100x100) en la parte superior
             rect_icono = icono_categoria.get_rect(center=(ANCHO_PANTALLA // 2, 130))
             pantalla.blit(icono_categoria, rect_icono)
         
-        # 2. Dibujar el texto de la categoría debajo del icono
-        dibujar_texto(pregunta_actual["categoria"], 
-                      fuente_opcion, # Usamos la fuente más pequeña
-                      GRIS_OSCURO, 
-                      pantalla, 
-                      ANCHO_PANTALLA // 2, 
-                      190, # Justo debajo del icono grande
-                      centrado=True)
+        dibujar_texto(pregunta_actual["categoria"], fuente_opcion, BLANCO, # Texto blanco
+                      pantalla, ANCHO_PANTALLA // 2, 190, centrado=True)
 
-        # 3. Dibujar la pregunta, más abajo
-        dibujar_texto(pregunta_actual["pregunta"], 
-                      fuente_pregunta, 
-                      NEGRO, 
-                      pantalla, 
-                      ANCHO_PANTALLA // 2, 
-                      pos_y_pregunta, # 250
-                      centrado=True)
-        
-        rects_opciones.clear()
+        # 2. Dibujar el Temporizador
+        color_timer = ROJO_INCORRECTO if (tiempo_restante_segundos <= 3 and estado_respuesta is None) else BLANCO # Texto blanco
+        dibujar_texto(str(tiempo_restante_segundos), fuente_pregunta, color_timer, 
+                      pantalla, ANCHO_PANTALLA // 2, 220, centrado=True)
+
+        # 3. Dibujar Pregunta
+        dibujar_texto(pregunta_actual["pregunta"], fuente_pregunta, BLANCO, # Texto blanco
+                      pantalla, ANCHO_PANTALLA // 2, pos_y_pregunta, centrado=True)
         
         # 4. Dibujar Opciones
+        rects_opciones.clear()
         for i, opcion in enumerate(pregunta_actual["opciones"]):
             pos_y = pos_y_opcion_base + (i * espacio_opcion)
             rect_boton = pygame.Rect(ANCHO_PANTALLA // 2 - 200, pos_y, 400, 50)
             rects_opciones.append(rect_boton)
             
-            color_fondo_boton = GRIS_CLARO
-            color_borde_boton = GRIS_OSCURO
+            # Colores para que resalten en el fondo
+            color_fondo_boton = (40, 40, 40, 200) # Fondo oscuro semitransparente
+            color_borde_boton = BLANCO      
+            color_texto_opcion = BLANCO     
             
             if estado_respuesta is not None:
                 if i == opcion_seleccionada:
@@ -500,12 +600,12 @@ def pantalla_juego(pregunta_actual, hud_data, iconos_grandes, iconos_hud, overla
                 if estado_respuesta == 'INCORRECTO' and i == pregunta_actual['correcta']:
                      color_fondo_boton = VERDE_CORRECTO
             
+            # Dibujar el rectángulo del botón
             pygame.draw.rect(pantalla, color_fondo_boton, rect_boton, border_radius=10)
-            pygame.draw.rect(pantalla, color_borde_boton, rect_boton, 2, border_radius=10)
-            
-            dibujar_texto(opcion, fuente_opcion, NEGRO, pantalla, rect_boton.centerx, rect_boton.centery, centrado=True)
+            pygame.draw.rect(pantalla, color_borde_boton, rect_boton, 2, border_radius=10) # Borde
+            dibujar_texto(opcion, fuente_opcion, color_texto_opcion, pantalla, rect_boton.centerx, rect_boton.centery, centrado=True)
 
-        # 5. Dibujar el HUD (siempre encima)
+        # 5. Dibujar HUD
         dibujar_hud(pantalla, hud_data, iconos_hud, overlay)
 
         pygame.display.flip()
@@ -592,11 +692,77 @@ def pantalla_elegir_personaje(personajes_obtenidos, iconos_grandes):
         pygame.display.flip()
         clock.tick(FPS)
 
+def pantalla_victoria(iconos_grandes, fondo_victoria):
+    """
+    MODIFICADO: Dibuja el fondo de victoria y ajusta el color del texto.
+    """
+    
+    ancho_boton = 300
+    alto_boton = 70
+    x_boton = (ANCHO_PANTALLA - ancho_boton) // 2
+    y_boton = 500 # Lo subí un poco
+    rect_boton_menu = pygame.Rect(x_boton, y_boton, ancho_boton, alto_boton)
+    
+    # Asegúrate de tener este color en tus constantes
+    COLOR_TITULO_VICTORIA = (255, 223, 0) # Dorado
+    
+    while True:
+        pos_mouse = pygame.mouse.get_pos()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return "SALIR"
+            
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    if rect_boton_menu.collidepoint(pos_mouse):
+                        return "INICIO"
+
+        # --- Dibujado ---
+        # NUEVO: Dibujar el fondo primero
+        if fondo_victoria:
+            pantalla.blit(fondo_victoria, (0, 0))
+        else:
+            pantalla.fill(BLANCO)
+        
+        # Título de Victoria
+        dibujar_texto("¡FELICIDADES!", 
+                      fuente_titulo, 
+                      COLOR_TITULO_VICTORIA, 
+                      pantalla, 
+                      ANCHO_PANTALLA // 2, 80, 
+                      centrado=True)
+        
+        dibujar_texto("¡Conseguiste los 3 personajes!", 
+                      fuente_pregunta, 
+                      BLANCO, # Texto blanco
+                      pantalla, 
+                      ANCHO_PANTALLA // 2, 180, # Más espacio
+                      centrado=True)
+        
+
+        # --- Dibujar el botón "Volver al Menú" ---
+        color_actual_boton = COLOR_BOTON_NORMAL
+        if rect_boton_menu.collidepoint(pos_mouse):
+            color_actual_boton = COLOR_BOTON_HOVER
+
+        pygame.draw.rect(pantalla, color_actual_boton, rect_boton_menu, border_radius=15)
+        
+        dibujar_texto("Volver al Menu", 
+                      fuente_opcion, 
+                      BLANCO, 
+                      pantalla, 
+                      rect_boton_menu.centerx, rect_boton_menu.centery, 
+                      centrado=True)
+
+        pygame.display.flip()
+        clock.tick(FPS)
+
 # --- 7. Bucle Principal (Gestor de Estados) ---
 
 def main():
     """
-    MODIFICADO: El gestor de estados ahora pasa la imagen de la ruleta.
+    MODIFICADO: El gestor de estados ahora pasa el fondo_juego a pantalla_inicio.
     """
     
     lista_total_preguntas = cargar_preguntas("preguntas.json")
@@ -607,8 +773,8 @@ def main():
 
     banco_preguntas_master = organizar_preguntas_por_categoria(lista_total_preguntas)
     
-    # MODIFICADO: Ahora carga y devuelve también la imagen de la ruleta
-    iconos_grandes, iconos_hud, overlay_desactivado, ruleta_imagen_base = cargar_iconos()
+    # Carga todos los recursos, incluyendo los fondos
+    iconos_grandes, iconos_hud, overlay_desactivado, ruleta_imagen_base, fondo_juego, fondo_victoria = cargar_iconos()
     
     puntuacion_total = 0
     racha_correctas = 0
@@ -627,7 +793,8 @@ def main():
         }
 
         if estado_actual == "INICIO":
-            resultado_inicio = pantalla_inicio()
+            # MODIFICADO: Pasa el fondo_juego a la pantalla de inicio
+            resultado_inicio = pantalla_inicio(fondo_juego) # <-- ¡CAMBIO AQUÍ!
             
             if resultado_inicio == "JUEGO":
                 preguntas_disponibles_partida = copy.deepcopy(banco_preguntas_master)
@@ -648,7 +815,6 @@ def main():
                 estado_actual = "INICIO"
                 continue
 
-            # MODIFICADO: Pasa la imagen de la ruleta a la pantalla_ruleta
             resultado_ruleta = pantalla_ruleta(categorias_disponibles, hud_data, iconos_grandes, iconos_hud, overlay_desactivado, ruleta_imagen_base)
             
             if resultado_ruleta == "SALIR":
@@ -663,7 +829,8 @@ def main():
                                              hud_data, 
                                              iconos_grandes, 
                                              iconos_hud, 
-                                             overlay_desactivado)
+                                             overlay_desactivado,
+                                             fondo_juego)
             
             if resultado_juego == "SALIR":
                 estado_actual = "SALIR"
@@ -695,16 +862,22 @@ def main():
                 
                 if all(personajes_obtenidos.values()):
                     print("¡HAS GANADO! ¡Obtuviste todos los personajes!")
-                    estado_actual = "INICIO" 
+                    estado_actual = "VICTORIA"
                 else:
                     estado_actual = "RULETA"
             else:
                 racha_correctas = 0
                 estado_actual = "RULETA"
+        
+        elif estado_actual == "VICTORIA":
+            resultado_victoria = pantalla_victoria(iconos_grandes, fondo_victoria)
+            
+            if resultado_victoria == "INICIO":
+                estado_actual = "INICIO"
+            else: 
+                estado_actual = "SALIR"
 
     pygame.quit()
     sys.exit()
-
-
 if __name__ == "__main__":
     main()
