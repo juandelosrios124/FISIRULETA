@@ -62,7 +62,7 @@
     {
         "categoria": "Temperatura",
         "pregunta": "La temperatura es una medida de la... promedio de las particulas.",
-        "opciones": ["Energia cinética", "Energia potencial", "Masa total", "Carga eléctrica"],
+        "opciones": ["Energia cinetica", "Energia potencial", "Masa total", "Carga electrica"],
         "correcta": 0
     },
     {
@@ -98,7 +98,7 @@
     {
         "categoria": "Campo Electrico",
         "pregunta": "¿Como es la fuerza sobre una carga negativa en un campo electrico?",
-        "opciones": ["Misma dirección que el campo", "Opuesta al campo", "Perpendicular al campo", "Nula"],
+        "opciones": ["Misma direccion del campo", "Opuesta al campo", "Perpendicular al campo", "Nula"],
         "correcta": 1
     },
     {

@@ -1,0 +1,188 @@
+{
+    "Campo Electrico": [
+        {
+            "categoria": "Desafio: Campo Electrico!",
+            "pregunta": "Que ley es fundamental para el Campo Electrico?",
+            "opciones": ["Ley de Ohm", "Ley de Coulomb", "Ley de Watt", "Ley de Joule"],
+            "correcta": 1
+        },
+        {
+            "categoria": "Desafio: Campo Electrico!",
+            "pregunta": "La unidad del campo electrico es...",
+            "opciones": ["Voltio (V)", "Amperio (A)", "Newton/Coulomb (N/C)", "Ohmio (O)"],
+            "correcta": 2
+        },
+        {
+            "categoria": "Desafio: Campo Electrico!",
+            "pregunta": "Un campo electrico uniforme tiene lineas de campo...",
+            "opciones": ["Paralelas", "Circulares", "Radiales", "Perpendiculares"],
+            "correcta": 0
+        },
+        {
+            "categoria": "Desafio: Campo Electrico!",
+            "pregunta": "Como es la fuerza sobre una carga negativa en un campo electrico?",
+            "opciones": ["Opuesta al campo", "Misma direccion", "Perpendicular", "Nula"],
+            "correcta": 0
+        },
+        {
+            "categoria": "Desafio: Campo Electrico!",
+            "pregunta": "Que ley relaciona el flujo electrico con la carga encerrada?",
+            "opciones": ["Ley de Ampere", "Ley de Gauss", "Ley de Faraday", "Ley de Ohm"],
+            "correcta": 1
+        },
+        {
+            "categoria": "Desafio: Campo Electrico!",
+            "pregunta": "La unidad del potencial electrico es el...",
+            "opciones": ["Voltio (V)", "Amperio (A)", "Vatio (W)", "Faradio (F)"],
+            "correcta": 0
+        },
+        {
+            "categoria": "Desafio: Campo Electrico!",
+            "pregunta": "El campo electrico dentro de un conductor en equilibrio es...",
+            "opciones": ["Infinito", "Constante", "Variable", "Cero"],
+            "correcta": 3
+        },
+        {
+            "categoria": "Desafio: Campo Electrico!",
+            "pregunta": "Que lineas nunca se cruzan en un diagrama de campo?",
+            "opciones": ["Lineas equipotenciales", "Lineas de campo", "Lineas de fuerza", "Lineas de Gauss"],
+            "correcta": 1
+        },
+        {
+            "categoria": "Desafio: Campo Electrico!",
+            "pregunta": "Un material que NO permite el flujo de carga se llama...",
+            "opciones": ["Conductor", "Semiconductor", "Aislante", "Superconductor"],
+            "correcta": 2
+        },
+        {
+            "categoria": "Desafio: Campo Electrico!",
+            "pregunta": "Como se llama la energia potencial por unidad de carga?",
+            "opciones": ["Potencial electrico", "Corriente", "Resistencia", "Flujo electrico"],
+            "correcta": 0
+        }
+    ],
+    "Corriente": [
+        {
+            "categoria": "Desafio: Corriente!",
+            "pregunta": "La unidad de la corriente electrica es el...",
+            "opciones": ["Voltio (V)", "Ohmio (O)", "Amperio (A)", "Vatio (W)"],
+            "correcta": 2
+        },
+        {
+            "categoria": "Desafio: Corriente!",
+            "pregunta": "Que tipo de corriente provee una bateria?",
+            "opciones": ["Corriente Alterna", "Corriente Mixta", "Corriente Inversa", "Corriente Directa"],
+            "correcta": 3
+        },
+        {
+            "categoria": "Desafio: Corriente!",
+            "pregunta": "Que ley describe la relacion V = I * R?",
+            "opciones": ["Ley de Gauss", "Ley de Ohm", "Ley de Ampere", "Ley de Faraday"],
+            "correcta": 1
+        },
+        {
+            "categoria": "Desafio: Corriente!",
+            "pregunta": "La unidad de la resistencia electrica es el...",
+            "opciones": ["Amperio", "Voltio", "Faradio", "Ohmio"],
+            "correcta": 3
+        },
+        {
+            "categoria": "Desafio: Corriente!",
+            "pregunta": "Como se llama a la oposicion al flujo de electrones?",
+            "opciones": ["Corriente", "Voltaje", "Resistencia", "Potencia"],
+            "correcta": 2
+        },
+        {
+            "categoria": "Desafio: Corriente!",
+            "pregunta": "En un circuito en serie, la corriente total...",
+            "opciones": ["Es la misma en todo punto", "Se divide", "Aumenta", "Disminuye"],
+            "correcta": 0
+        },
+        {
+            "categoria": "Desafio: Corriente!",
+            "pregunta": "En un circuito en paralelo, el voltaje total...",
+            "opciones": ["Se divide", "Es el mismo en cada rama", "Se multiplica", "Es cero"],
+            "correcta": 1
+        },
+        {
+            "categoria": "Desafio: Corriente!",
+            "pregunta": "La unidad de la potencia electrica es el...",
+            "opciones": ["Vatio (W)", "Julio (J)", "Newton (N)", "Amperio (A)"],
+            "correcta": 0
+        },
+        {
+            "categoria": "Desafio: Corriente!",
+            "pregunta": "Que componente se opone a los cambios bruscos en la corriente?",
+            "opciones": ["Capacitor", "Resistor", "Inductor", "Diodo"],
+            "correcta": 2
+        },
+        {
+            "categoria": "Desafio: Corriente!",
+            "pregunta": "Un material que permite facilmente el flujo de corriente es un...",
+            "opciones": ["Aislante", "Conductor", "Semiconductor", "Capacitor"],
+            "correcta": 1
+        }
+    ],
+    "Temperatura": [
+        {
+            "categoria": "Desafio: Temperatura!",
+            "pregunta": "Cual es la 'Ley Cero' de la termodinamica?",
+            "opciones": ["Equilibrio termico", "Conservacion de energia", "Entropia", "Cero absoluto"],
+            "correcta": 0
+        },
+        {
+            "categoria": "Desafio: Temperatura!",
+            "pregunta": "El cero absoluto se encuentra en...",
+            "opciones": ["0 Celsius", "0 Fahrenheit", "100 Kelvin", "0 Kelvin"],
+            "correcta": 3
+        },
+        {
+            "categoria": "Desafio: Temperatura!",
+            "pregunta": "Como se llama la transferencia de calor por contacto directo?",
+            "opciones": ["Conveccion", "Radiacion", "Conduccion", "Evaporacion"],
+            "correcta": 2
+        },
+        {
+            "categoria": "Desafio: Temperatura!",
+            "pregunta": "Transferencia de calor por movimiento de fluidos?",
+            "opciones": ["Conduccion", "Radiacion", "Conveccion", "Sublimacion"],
+            "correcta": 2
+        },
+        {
+            "categoria": "Desafio: Temperatura!",
+            "pregunta": "Transferencia de calor por ondas electromagneticas?",
+            "opciones": ["Conduccion", "Radiacion", "Conveccion", "Resistencia"],
+            "correcta": 1
+        },
+        {
+            "categoria": "Desafio: Temperatura!",
+            "pregunta": "A que temperatura hierve el agua en Celsius?",
+            "opciones": ["0 C", "100 C", "212 F", "273 K"],
+            "correcta": 1
+        },
+        {
+            "categoria": "Desafio: Temperatura!",
+            "pregunta": "Que escala de temperatura se usa comunmente en los Estados Unidos?",
+            "opciones": ["Celsius", "Kelvin", "Rankine", "Fahrenheit"],
+            "correcta": 3
+        },
+        {
+            "categoria": "Desafio: Temperatura!",
+            "pregunta": "La temperatura es una medida de la... promedio de las particulas.",
+            "opciones": ["Energia cinetica", "Energia potencial", "Masa total", "Carga electrica"],
+            "correcta": 0
+        },
+        {
+            "categoria": "Desafio: Temperatura!",
+            "pregunta": "Que dispositivo mide la temperatura?",
+            "opciones": ["Barometro", "Termometro", "Amperimetro", "Voltimetro"],
+            "correcta": 1
+        },
+        {
+            "categoria": "Desafio: Temperatura!",
+            "pregunta": "La primera ley de la termodinamica trata sobre la...",
+            "opciones": ["Entropia", "Eficiencia", "Direccion del calor", "Conservacion de energia"],
+            "correcta": 3
+        }
+    ]
+}
